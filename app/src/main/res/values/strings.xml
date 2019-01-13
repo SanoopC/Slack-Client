@@ -10,4 +10,6 @@
     <string name="event_hello">hello</string>
     <string name="event_message">message</string>
     <string name="bearer">Bearer</string>
+    <string name="channel_description">For notification</string>
+    <string name="channel_name">Slack Channel</string>
 </resources>
