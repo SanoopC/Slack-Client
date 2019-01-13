@@ -7,4 +7,6 @@
     <string name="no_network">Check your network connection</string>
     <string name="no_data">No Data</string>
     <string name="no_channel">No channel available for you</string>
+    <string name="event_hello">hello</string>
+    <string name="event_message">message</string>
 </resources>

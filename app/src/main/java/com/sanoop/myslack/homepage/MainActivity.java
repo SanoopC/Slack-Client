@@ -21,8 +21,8 @@ import android.widget.Toast;
 import com.sanoop.myslack.Models.ChannelAdapterModel;
 import com.sanoop.myslack.Models.ChannelInfo;
 import com.sanoop.myslack.Models.ChannelInfoResponse;
-import com.sanoop.myslack.Models.SlackDetails;
 import com.sanoop.myslack.Models.RtmConnectResponse;
+import com.sanoop.myslack.Models.SlackDetails;
 import com.sanoop.myslack.Models.UserInfo;
 import com.sanoop.myslack.R;
 import com.sanoop.myslack.rest.ApiClient;
@@ -36,9 +36,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import allbegray.slack.rtm.Event;
-import allbegray.slack.rtm.SlackRealTimeMessagingClient;
-import allbegray.slack.webapi.SlackWebApiClient;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
@@ -53,8 +50,6 @@ public class MainActivity extends AppCompatActivity {
     private ChannelAdapter adapter;
     private List<ChannelAdapterModel> channelList;
     private ImageView sendButton;
-    private SlackWebApiClient mWebApiClient;
-    private SlackRealTimeMessagingClient mRtmClient;
     private String mBotId;
     private RtmConnectResponse rtmConnectResponse;
     private SlackDetails slackSlackDetails;
@@ -129,9 +124,9 @@ public class MainActivity extends AppCompatActivity {
                         if (rtmObject.has("reply_to"))
                             replyTo = rtmObject.getString("reply_to");
                         if (messageType != null) {
-                            if (messageType.equalsIgnoreCase(String.valueOf(Event.HELLO))) {
+                            if (messageType.equalsIgnoreCase(String.valueOf(getString(R.string.event_hello)))) {
                                 Log.d("SocketConnection", "Connection Completed");
-                            } else if (messageType.equalsIgnoreCase(String.valueOf(Event.MESSAGE))) {
+                            } else if (messageType.equalsIgnoreCase(String.valueOf(getString(R.string.event_message)))) {
                                 updateRecyclerView(rtmObject.getString("text"),
                                         rtmObject.getString("user"),
                                         rtmObject.getString("channel"));
