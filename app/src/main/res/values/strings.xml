@@ -9,4 +9,5 @@
     <string name="no_channel">No channel available for you</string>
     <string name="event_hello">hello</string>
     <string name="event_message">message</string>
+    <string name="bearer">Bearer</string>
 </resources>
