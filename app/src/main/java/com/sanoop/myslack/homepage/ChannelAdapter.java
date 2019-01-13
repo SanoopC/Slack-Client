@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.sanoop.myslack.Models.ChannelAdapterModel;
 import com.sanoop.myslack.R;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
 public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.MyViewHolder> {
 
     private Context mContext;
-    private List<ChannelModel> channelList;
+    private List<ChannelAdapterModel> channelList;
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
         public TextView channelTitleTextView, sederNameTextView, messageTextView;
@@ -28,7 +29,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.MyViewHo
     }
 
 
-    public ChannelAdapter(Context mContext, List<ChannelModel> channelList) {
+    public ChannelAdapter(Context mContext, List<ChannelAdapterModel> channelList) {
         this.mContext = mContext;
         this.channelList = channelList;
     }
@@ -43,10 +44,10 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.MyViewHo
 
     @Override
     public void onBindViewHolder(final MyViewHolder holder, int position) {
-        ChannelModel channelModel = channelList.get(position);
-        holder.channelTitleTextView.setText(channelModel.getChannelName());
-        holder.sederNameTextView.setText(channelModel.getSenderName());
-        holder.messageTextView.setText(channelModel.getMessage());
+        ChannelAdapterModel channelAdapterModel = channelList.get(position);
+        holder.channelTitleTextView.setText(channelAdapterModel.getChannelName());
+        holder.sederNameTextView.setText(channelAdapterModel.getSenderName());
+        holder.messageTextView.setText(channelAdapterModel.getMessage());
     }
 
     @Override
