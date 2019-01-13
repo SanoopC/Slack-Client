@@ -18,12 +18,13 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.MyViewHo
     private List<ChannelAdapterModel> channelList;
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
-        public TextView channelTitleTextView, sederNameTextView, messageTextView;
+        public TextView channelTitleTextView, sederNameTextView, messageTextView, messageTimeTextView;
 
         public MyViewHolder(View view) {
             super(view);
             channelTitleTextView = (TextView) view.findViewById(R.id.channel_title_text_view);
             sederNameTextView = (TextView) view.findViewById(R.id.sender_name_text_view);
+            messageTimeTextView = (TextView) view.findViewById(R.id.message_time_text_view);
             messageTextView = (TextView) view.findViewById(R.id.message_text_view);
         }
     }
@@ -47,6 +48,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.MyViewHo
         ChannelAdapterModel channelAdapterModel = channelList.get(position);
         holder.channelTitleTextView.setText(channelAdapterModel.getChannelName());
         holder.sederNameTextView.setText(channelAdapterModel.getSenderName());
+        holder.messageTimeTextView.setText(channelAdapterModel.getMessageTime());
         holder.messageTextView.setText(channelAdapterModel.getMessage());
     }
 

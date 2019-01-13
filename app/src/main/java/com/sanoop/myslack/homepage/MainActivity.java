@@ -1,10 +1,18 @@
 package com.sanoop.myslack.homepage;
 
+import android.app.ActivityManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -33,10 +41,13 @@ import com.sanoop.myslack.rest.MyConfig;
 import org.json.JSONObject;
 
 import java.security.Key;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -49,6 +60,8 @@ import okio.ByteString;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static com.sanoop.myslack.rest.MyConfig.CHANNEL_ID;
 
 public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
@@ -75,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
     private AlertDialog.Builder builder;
     private String channelName;
     private ChannelAdapterModel channelAdapterModel;
-    private String replyTo;
+    private String replyTo, timeStamp;
     private String selectedChannel;
     private ApiInterface apiService;
     private ProgressBar progressBar;
@@ -124,23 +137,26 @@ public class MainActivity extends AppCompatActivity {
                     if (json != null) {
                         messageType = null;
                         replyTo = null;
+                        timeStamp = null;
                         rtmObject = new JSONObject(json);
                         if (rtmObject.has("type"))
                             messageType = rtmObject.getString("type");
                         if (rtmObject.has("reply_to"))
                             replyTo = rtmObject.getString("reply_to");
+                        if (rtmObject.has("ts"))
+                            timeStamp = rtmObject.getString("ts");
                         if (messageType != null) {
                             if (messageType.equalsIgnoreCase(String.valueOf(getString(R.string.event_hello)))) {
                                 Log.d("SocketConnection", "Connection Completed");
                             } else if (messageType.equalsIgnoreCase(String.valueOf(getString(R.string.event_message)))) {
                                 updateRecyclerView(rtmObject.getString("text"),
                                         rtmObject.getString("user"),
-                                        rtmObject.getString("channel"));
+                                        rtmObject.getString("channel"), timeStamp);
                             }
                         } else if (replyTo != null && !replyTo.equals("")) {
                             updateRecyclerView(rtmObject.getString("text"),
                                     slackSlackDetails.getSelfInfo().getSelfId(),
-                                    channelsWithAccess.get(selectedChannel).getChannelId());
+                                    channelsWithAccess.get(selectedChannel).getChannelId(), timeStamp);
                         }
                     }
                 } catch (Throwable t) {
@@ -150,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void updateRecyclerView(String text, String userID, String channelID) {
+    private void updateRecyclerView(String text, String userID, String channelID, String timeStamp) {
         for (i = 0; i < channelList.size(); i++) {
             if (channelList.get(i).getChannelID().equals(channelID)) {
                 myVeryOwnIterator = channelsWithAccess.keySet().iterator();
@@ -160,12 +176,15 @@ public class MainActivity extends AppCompatActivity {
                         channelName = key;
                 }
                 channelAdapterModel = new ChannelAdapterModel(text, activeUsers.get(userID), channelName,
-                        channelList.get(i).getChannelID());
+                        channelList.get(i).getChannelID(),
+                        getDate(timeStamp));
                 channelList.set(i, channelAdapterModel);
                 adapter.notifyItemChanged(i);
             }
         }
         progressBar.setVisibility(View.GONE);
+        if (isAppIsInBackground())
+            showNotification(channelName, activeUsers.get(userID), text);
     }
 
     @Override
@@ -189,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(adapter);
+        createNotificationChannel();
         if (isNetworkAvailable())
             getSlackDetails();
         else {
@@ -210,6 +230,52 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    public void showNotification(String channel, String userName, String text) {
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("# " + channel)
+                .setContentText(userName + ": " + text)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(contentIntent);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+        notificationManager.notify(0, mBuilder.build());
+    }
+
+    public boolean isAppIsInBackground() {
+        boolean isInBackground = true;
+        ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> runningProcesses = am.getRunningAppProcesses();
+        for (ActivityManager.RunningAppProcessInfo processInfo : runningProcesses) {
+            if (processInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                for (String activeProcess : processInfo.pkgList) {
+                    if (activeProcess.equals(getPackageName())) {
+                        isInBackground = false;
+                    }
+                }
+            }
+        }
+        return isInBackground;
     }
 
     public String getBot() {
@@ -299,7 +365,8 @@ public class MainActivity extends AppCompatActivity {
                     channelAdapterModel = new ChannelAdapterModel(
                             channelInfo.getLatestMessage().getTextMessage(),
                             activeUsers.get(channelInfo.getLatestMessage().getUserID()),
-                            channelInfo.getChannelName(), channelInfo.getChannelId());
+                            channelInfo.getChannelName(), channelInfo.getChannelId(),
+                            getDate(channelInfo.getLatestMessage().getTimeStamp()));
                     channelList.add(channelAdapterModel);
                     adapter.notifyDataSetChanged();
                 }
@@ -383,6 +450,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private String getDate(String timeStamp) {
+        try {
+            long mTimeStamp = Long.parseLong(timeStamp.substring(0, timeStamp.indexOf("."))) * 1000L;
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.US);
+            Date netDate = (new Date(mTimeStamp));
+            return sdf.format(netDate);
+        } catch (Exception ex) {
+            return "";
+        }
     }
 
 }

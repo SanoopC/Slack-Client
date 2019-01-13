@@ -7,6 +7,8 @@ public class LatestMessage {
     private String userID;
     @SerializedName("text")
     private String textMessage;
+    @SerializedName("ts")
+    private String timeStamp;
 
     public String getUserID() {
         return userID;
@@ -14,5 +16,9 @@ public class LatestMessage {
 
     public String getTextMessage() {
         return textMessage;
+    }
+
+    public String getTimeStamp() {
+        return timeStamp;
     }
 }
