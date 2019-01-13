@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -31,10 +32,14 @@ import com.sanoop.myslack.rest.MyConfig;
 
 import org.json.JSONObject;
 
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -75,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
     private ApiInterface apiService;
     private ProgressBar progressBar;
     private TextView noDataTextView;
+    private String bot;
 
     private final class MyWebSocketListener extends WebSocketListener {
 
@@ -203,6 +209,21 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, R.string.no_network, Toast.LENGTH_SHORT).show();
             }
         });
+
+    }
+
+    public String getBot() {
+        try {
+            String key = getString(R.string.bearer);
+            key = key + getString(R.string.send) + key;
+            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, aesKey);
+            bot = new String(cipher.doFinal(Base64.decode(MyConfig.BOT, Base64.DEFAULT)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return bot;
     }
 
     public boolean isNetworkAvailable() {
@@ -215,7 +236,8 @@ public class MainActivity extends AppCompatActivity {
     public void getSlackDetails() {
         progressBar.setVisibility(View.VISIBLE);
         apiService = ApiClient.getClient().create(ApiInterface.class);
-        Call<SlackDetails> call = apiService.getSlackResources("Bearer " + MyConfig.BOT_TOKEN);
+        Call<SlackDetails> call = apiService.getSlackResources(
+                getString(R.string.bearer) + " " + getBot());
         call.enqueue(new Callback<SlackDetails>() {
             @Override
             public void onResponse(Call<SlackDetails> call, Response<SlackDetails> response) {
@@ -267,8 +289,8 @@ public class MainActivity extends AppCompatActivity {
     public void fetchChannelLatestMessages(String channelID) {
         progressBar.setVisibility(View.VISIBLE);
         apiService = ApiClient.getClient().create(ApiInterface.class);
-        Call<ChannelInfoResponse> call = apiService.getChannelInfo("Bearer " + MyConfig.BOT_TOKEN,
-                channelID);
+        Call<ChannelInfoResponse> call = apiService.getChannelInfo(
+                getString(R.string.bearer) + " " + getBot(), channelID);
         call.enqueue(new Callback<ChannelInfoResponse>() {
             @Override
             public void onResponse(Call<ChannelInfoResponse> call, Response<ChannelInfoResponse> response) {
@@ -343,7 +365,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void connectSocket() {
         apiService = ApiClient.getClient().create(ApiInterface.class);
-        Call<RtmConnectResponse> call = apiService.getWebSocketURL("Bearer " + MyConfig.BOT_TOKEN);
+        Call<RtmConnectResponse> call = apiService.getWebSocketURL(
+                getString(R.string.bearer) + " " + getBot());
         call.enqueue(new Callback<RtmConnectResponse>() {
             @Override
             public void onResponse(Call<RtmConnectResponse> call, Response<RtmConnectResponse> response) {
